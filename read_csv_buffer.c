@@ -10,10 +10,29 @@ i handle missing value case here where there i didn't
 I need a concrete answer to why this is faster
 Isn't file stream already loaded in c and shouldn't
 it behave like buffer below??
+
+From what i understood, getc calls syscalls to read
+Thus lower syscalls the better and since we are taking whole
+file at one call, thus it is faster
 */
 /*
 Another problem: It doesn't interpret it rightly
 refer compare.py
+
+Actually it is about precision of double, since i am
+using format specifier in fprintf -> by default it decimal
+point precision is 6. Thus i get string of 6 decimal of double
+in csv temp_dump
+
+I have increased the precision to 10.
+
+Another thing is i can't get proper precision as that given in csv
+because once storing double in memory, it isn't like after all
+digits everything is zero. Thus can't find a way to measure proper
+precision which was given in csv.
+
+Can save precision here, but it is overhead and i don't thing it will
+matter much
 */
 /*
 ```
@@ -83,7 +102,7 @@ int buffer_read_csv(char *progname, char *filename) {
 		fclose(fp);
 		return 7;
 	}
-	int total_char = ftell(fp);
+	long total_char = ftell(fp);
 	if (total_char == -1) {
 		fprintf(stderr, "Err while using ftell\n");
 		fclose(fp);
@@ -95,7 +114,7 @@ int buffer_read_csv(char *progname, char *filename) {
 		return 7;
 	}
 
-	printf("Buffer Size: %d\n", total_char);
+	printf("Buffer Size: %lu\n", total_char);
 	char buffer[total_char];
 	fread(buffer, 1, total_char, fp);
 	if (ferror(fp)) {

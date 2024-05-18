@@ -10,6 +10,9 @@
 fish: Job 1, './read_csv.out output.csv 1' terminated by signal SIGABRT (Abort)
 ```
 Why this?
+
+--> Because below the buffer variable is overflowing certainly there are double
+greater than length of 10. After changing it got fixed.
 */
 
 int getc_read_csv(char *progname, char *filename);
@@ -97,7 +100,7 @@ int getc_read_csv(char *progname, char *filename) {
 	csv_mat = Matrix_create(row, col);
 	int csv_indx = -1;
 
-	char buffer[10];
+	char buffer[30];
 	for (int i = 0; i < 10; i++) {
 		buffer[i] = '0';
 	}
