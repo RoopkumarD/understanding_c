@@ -114,7 +114,7 @@ int buffer_read_csv(char *progname, char *filename) {
 		return 7;
 	}
 
-	printf("Buffer Size: %lu\n", total_char);
+	// printf("Buffer Size: %lu\n", total_char);
 	char buffer[total_char];
 	fread(buffer, 1, total_char, fp);
 	if (ferror(fp)) {
