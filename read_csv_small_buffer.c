@@ -124,37 +124,50 @@ int buffer_read_csv(char *progname, char *filename) {
 		char_start = 0;
 		for (size_t i = 0; i < bytes_read; i++) {
 			if ((buffer[i] == ',') || (buffer[i] == '\n')) {
-				if (buffer[char_start] == ',') {
-					// handling missing data
+				// handling missing data
+				if ((buffer[char_start] == ',') || (buffer[char_start] == '\n')) {
 					csv_indx++;
-					csv_mat->data[csv_indx] = 0;
+					// filling the missing data as -1
+					csv_mat->data[csv_indx] = -1;
 					read_columns++;
 
-					char_start = i+1;
+					char_start = i + 1;
 				} else {
 					char temp = buffer[i];
 					buffer[i] = '\0';
 					num = atof(&buffer[char_start]);
-					if ((num == 0.0) && (
+
+					if (
+						(num == 0.0) &&
 						(strcmp("0.0", &buffer[char_start]) != 0) &&
 						(strcmp("0", &buffer[char_start]) != 0)
-					)) {
-						for (int m = char_start-10; m < i+10; m++) {
-							if (m == i) {
-								printf("%c", temp);
-							} else {
-								printf("%c", buffer[m]);
+					) {
+						// printing around that char num
+						int pps = ((char_start - 10) < 0) ? 0 : (char_start-10);
+						int ppe = 
+							((i + 10) > (bytes_read)) ? (bytes_read) : (i+10);
+
+						buffer[i] = temp;
+						for (int m = pps; m < ppe; m++) {
+							if ((m >= char_start) && (m < i)) {
+								fprintf(stderr, "\033[1;33m%c\033[0m", buffer[m]);
+								continue;
 							}
+							fprintf(stderr, "%c", buffer[m]);
 						}
-						printf("\n");
-						printf("i: %zu, char_start: %zu\n", i, char_start);
+						fprintf(stderr, "\n");
+
+						fprintf(stderr, "char_start: %zu, i: %zu\n", char_start, i);
+						buffer[i] = '\0';
 						fprintf(stderr, "Couldn't convert: %s\n", &buffer[char_start]);
+						fprintf(stderr, "--------------\n");
 						retval = 10;
 						goto cleanup;
 					}
+
+					buffer[i] = temp;
 					csv_indx++;
 					csv_mat->data[csv_indx] = num;
-					buffer[i] = temp;
 					read_columns++;
 
 					char_start = i+1;
@@ -162,7 +175,6 @@ int buffer_read_csv(char *progname, char *filename) {
 
 				if (buffer[i] == '\n') {
 					if (read_columns != col) {
-						puts("Inside main loop");
 						fprintf(stderr, "Incorrect file format\n");
 						retval = 3;
 						goto cleanup;
@@ -171,40 +183,72 @@ int buffer_read_csv(char *progname, char *filename) {
 				}
 			}
 		}
-		// for cases where file doesn't end with \n
-		if ((bytes_read < BUFFER_SIZE) && (buffer[bytes_read-1] != '\n')) {
+
+		if (bytes_read == BUFFER_SIZE) {
+			if ((buffer[bytes_read-1] != '\n') || (buffer[bytes_read-1] != ',')) {
+				file_idx += char_start;
+				if (fseek(fp, file_idx, SEEK_SET)) {
+					fprintf(stderr, "Can't Seek at %zu from start\n", file_idx);
+					retval = 7;
+					goto cleanup;
+				}
+				how_many_times_seek++;
+			} else {
+				file_idx += bytes_read;
+			}
+		// don't have to compare bytes<BUFFER as from above condition
+		// if it is false then, it will lead to bytes < BUFFER
+		// cause bytes read can't be greater than BUFFER_SIZE due to
+		// fread returning value less than or equal to size
+		} else if (buffer[bytes_read-1] != '\n') {
+			// for cases where file doesn't end with \n
 			// then last saved elem to matrix
-			if (buffer[char_start] == ',') {
+			if (buffer[bytes_read-1] == ',') {
 				csv_indx++;
-				csv_mat->data[csv_indx] = 0;
+				// filling the missing data as -1
+				csv_mat->data[csv_indx] = -1;
 				read_columns++;
 			} else {
+				// now only possiblity is either a number
+				// or any other unexpected char
+				buffer[bytes_read] = '\0';
 				num = atof(&buffer[char_start]);
+
+				if (
+					(num == 0.0) &&
+					(strcmp("0.0", &buffer[char_start]) != 0) &&
+					(strcmp("0", &buffer[char_start]) != 0)
+				) {
+					// printing around that char num
+					int pps = ((char_start - 10) < 0) ? 0 : (char_start-10);
+
+					for (int m = pps; m < bytes_read; m++) {
+						if (m >= char_start) {
+							fprintf(stderr, "\033[1;33m%c\033[0m", buffer[m]);
+							continue;
+						}
+						fprintf(stderr, "%c", buffer[m]);
+					}
+					fprintf(stderr, "\n");
+
+					fprintf(stderr, "char_start: %zu, i: %zu\n", char_start, bytes_read-1);
+					fprintf(stderr, "Couldn't convert: %s\n", &buffer[char_start]);
+					fprintf(stderr, "-----------\n");
+					retval = 10;
+					goto cleanup;
+				}
+
 				csv_indx++;
 				csv_mat->data[csv_indx] = num;
 				read_columns++;
 			}
 
 			if (read_columns != col) {
-				puts("Inside Ending with non \\n");
+				fprintf(stderr, "Inside Ending with non \\n\n");
 				fprintf(stderr, "Incorrect file format\n");
 				retval = 4;
 				goto cleanup;
 			}
-		} else if (
-			(bytes_read == BUFFER_SIZE) &&
-			(buffer[bytes_read-1] != ',') &&
-			(buffer[bytes_read-1] != '\n')
-		) {
-			file_idx += char_start;
-			if (fseek(fp, file_idx, SEEK_SET)) {
-				fprintf(stderr, "Can't Seek at %zu from start\n", file_idx);
-				retval = 7;
-				goto cleanup;
-			}
-			how_many_times_seek++;
-		} else {
-			file_idx += bytes_read;
 		}
 	}
 
