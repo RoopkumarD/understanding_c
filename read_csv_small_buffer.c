@@ -17,7 +17,7 @@ int buffer_read_csv(char *progname, char *filename);
 
 int main(int argc, char *argv[]) {
 	if (argc != 3) {
-		fprintf(stderr, "Usage: executable filename\n");
+		fprintf(stderr, "Usage: executable filename numtimes\n");
 		return 1;
 	}
 
@@ -43,6 +43,10 @@ int main(int argc, char *argv[]) {
 int buffer_read_csv(char *progname, char *filename) {
 	int retval = 0;
 	Matrix *csv_mat = NULL;
+	/*
+	int total_filename_str_size = strlen("/tmp/") + strlen(filename);
+	char dump_filename[total_filename_str_size+1];
+	*/
 
 	FILE *fp = fopen(filename, "r");
 	if (fp == NULL) {
@@ -125,13 +129,16 @@ int buffer_read_csv(char *progname, char *filename) {
 		for (size_t i = 0; i < bytes_read; i++) {
 			if ((buffer[i] == ',') || (buffer[i] == '\n')) {
 				// handling missing data
-				if ((buffer[char_start] == ',') || (buffer[char_start] == '\n')) {
+				if (
+					(buffer[char_start] == ',') ||
+					(buffer[char_start] == '\n')
+				) {
 					csv_indx++;
 					// filling the missing data as -1
 					csv_mat->data[csv_indx] = -1;
 					read_columns++;
 
-					char_start = i + 1;
+					char_start = (buffer[i+1] != '\r') ? (i + 1) : (i+2);
 				} else {
 					char temp = buffer[i];
 					buffer[i] = '\0';
@@ -140,6 +147,7 @@ int buffer_read_csv(char *progname, char *filename) {
 					if (
 						(num == 0.0) &&
 						(strcmp("0.0", &buffer[char_start]) != 0) &&
+						(strcmp("0\r", &buffer[char_start]) != 0) &&
 						(strcmp("0", &buffer[char_start]) != 0)
 					) {
 						// printing around that char num
@@ -148,6 +156,8 @@ int buffer_read_csv(char *progname, char *filename) {
 							((i + 10) > (bytes_read)) ? (bytes_read) : (i+10);
 
 						buffer[i] = temp;
+						fprintf(stderr, "char %c, int %d\n", buffer[char_start], buffer[char_start]);
+						fprintf(stderr, "char %c, int %d\n", buffer[char_start+1], buffer[char_start+1]);
 						for (int m = pps; m < ppe; m++) {
 							if ((m >= char_start) && (m < i)) {
 								fprintf(stderr, "\033[1;33m%c\033[0m", buffer[m]);
@@ -170,7 +180,7 @@ int buffer_read_csv(char *progname, char *filename) {
 					csv_mat->data[csv_indx] = num;
 					read_columns++;
 
-					char_start = i+1;
+					char_start = (buffer[i+1] != '\r') ? (i + 1) : (i+2);
 				}
 
 				if (buffer[i] == '\n') {
@@ -203,7 +213,7 @@ int buffer_read_csv(char *progname, char *filename) {
 		} else if (buffer[bytes_read-1] != '\n') {
 			// for cases where file doesn't end with \n
 			// then last saved elem to matrix
-			if (buffer[bytes_read-1] == ',') {
+			if ((buffer[bytes_read-1] == ',') || (buffer[bytes_read-1] == '\r')) {
 				csv_indx++;
 				// filling the missing data as -1
 				csv_mat->data[csv_indx] = -1;
@@ -256,7 +266,18 @@ int buffer_read_csv(char *progname, char *filename) {
 
 	// matrix_print(csv_mat);
 	// to check if interpreted the csv right
-	// matrix_dump_csv(csv_mat, "temp_dump_small_buffer.csv");
+	/*
+	dump_filename[total_filename_str_size] = '\0';
+	dump_filename[0] = '/';
+	dump_filename[1] = 't';
+	dump_filename[2] = 'm';
+	dump_filename[3] = 'p';
+	dump_filename[4] = '/';
+	for (int i = 5; i < total_filename_str_size; i++) {
+		dump_filename[i] = filename[i];
+	}
+	matrix_dump_csv(csv_mat, dump_filename);
+	*/
 
 	cleanup:
 	matrix_free(csv_mat);

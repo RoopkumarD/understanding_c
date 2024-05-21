@@ -1,6 +1,6 @@
 *.out
 *.sh
 *.csv
-*.py
+csvs/
 
 testing.c
