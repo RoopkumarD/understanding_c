@@ -1,6 +1,6 @@
 *.out
 *.sh
 *.csv
-csvs/
+csv_reader/csvs/
 
 testing.c
