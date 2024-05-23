@@ -1,14 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
 #define ALLOCATE_MEM(size, type, pointer)	\
 	type buffer[size];			\
 	pointer = &buffer[0];			\
+*/
+
+// ({ }) is an expression whose value is returned
+// when written like below. Here, &buffer[0] is returned
+#define ALLOCATE_MEM(size, type)		\
+	({ type buffer[size];			\
+		&buffer[0]; })			\
+
 
 int main(void) {
 	char *s = NULL;
 	printf("%p\n", s);
-	ALLOCATE_MEM(5, char, s)
+	s = ALLOCATE_MEM(5, char);
 	printf("%p\n", s);
 
 	for (int i = 0; i < 5; i++) {
@@ -17,7 +26,7 @@ int main(void) {
 	}
 
 	for (int i = 0; i < 5; i++) {
-		printf("buffer[%d] -> %c\n", i, buffer[i]);
+		printf("buffer[%d] -> %c\n", i, s[i]);
 	}
 
 	return 0;
