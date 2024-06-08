@@ -22,8 +22,8 @@ int main(int argc, char *argv[]) {
     for (int i = 2; i < num; i++) {
         // i * i as previous i * 2 to i * (i-1) were already
         // marked 1 by 2 to (i-1) prime number
-        if (all_nums[i] == 0 && i * i <= num) {
-            for (int j = i * i; j <= num; j += i) {
+        if (all_nums[i] == 0 && i * i < num) {
+            for (int j = i * i; j < num; j += i) {
                 all_nums[j] = 1;
             }
         }
