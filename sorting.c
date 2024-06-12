@@ -3,6 +3,61 @@
 #include <stdlib.h>
 #include <time.h>
 
+void merge(int *arr1, size_t arr1_len, int *arr2, size_t arr2_len) {
+    // one neat thing about this is that, arr1 and arr2
+    // are continous. Thus i can just create a temporary array
+    // in stack and store merging and later copy that temp array
+    // to original arr
+
+    int combined_len = arr1_len + arr2_len;
+    int temp[combined_len];
+    int i = 0, j = 0, k = 0;
+
+    while (k < combined_len) {
+        if (i == arr1_len) {
+            temp[k] = arr2[j];
+            j++;
+        } else if (j == arr2_len) {
+            temp[k] = arr1[i];
+            i++;
+        } else {
+            if (arr1[i] > arr2[j]) {
+                temp[k] = arr2[j];
+                j++;
+            } else {
+                temp[k] = arr1[i];
+                i++;
+            }
+        }
+        k++;
+    }
+
+    for (int i = 0; i < combined_len; i++) {
+        arr1[i] = temp[i];
+    }
+
+    return;
+}
+
+void merge_sort(int *arr, size_t arr_length) {
+    if (arr_length == 1) {
+        return;
+    }
+
+    // splitting to left
+    int left_end = arr_length / 2;
+    merge_sort(arr, left_end);
+
+    // splitting to right
+    int right_start = arr_length - left_end;
+    merge_sort(arr + left_end, right_start);
+
+    // after sorting individual, let's merge them
+    merge(arr, left_end, arr + left_end, right_start);
+
+    return;
+}
+
 typedef struct ll {
     int num;
     struct ll *nxt;
@@ -18,7 +73,6 @@ void insertion_sort(int *arr, size_t arr_length) {
     LinkedList *base = pointer;
     base->num = 0;
     base->nxt = NULL;
-    LinkedList *otherHead = pointer + 1;
 
     for (size_t i = 0; i < arr_length; i++) {
         LinkedList *elem = ++pointer;
@@ -84,10 +138,15 @@ void bubble_sort(int *arr, size_t arr_length) {
 
 void shuffle(int *arr, size_t arr_length);
 
-int main(void) {
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: ./exec 0|1{for printing the sorted arr}\n");
+        return 0;
+    }
+
     srand(time(NULL));
 
-    size_t arr_length = 100;
+    size_t arr_length = 1000000;
     int arr[arr_length];
     for (int i = 0; i < arr_length; i++) {
         arr[i] = i;
@@ -99,13 +158,17 @@ int main(void) {
     // sorting
     // bubble_sort(arr, arr_length);
     // selection_sort(arr, arr_length);
-    insertion_sort(arr, arr_length);
+    // insertion_sort(arr, arr_length);
+    merge_sort(arr, arr_length);
 
     // checking sorting
-    for (int i = 0; i < arr_length; i++) {
-        printf("%d, ", arr[i]);
+    int should_print = atoi(argv[1]);
+    if (should_print == 1) {
+        for (int i = 0; i < arr_length; i++) {
+            printf("%d, ", arr[i]);
+        }
+        printf("\n");
     }
-    printf("\n");
 
     return 0;
 }
