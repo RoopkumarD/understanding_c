@@ -3,6 +3,37 @@
 #include <stdlib.h>
 #include <time.h>
 
+void quicksort(int *arr, size_t arr_length) {
+    if (arr_length == 1 || arr_length == 0) {
+        return;
+    }
+
+    // choosing pivot element as first element
+    // now rearranging them in (lower than pivot) pivot (higher than pivot)
+    // by |Pivot|Lower|Higher|Unclassified| partition method
+    size_t pivot_posn = 0, higher_start = 1;
+    for (size_t i = 1; i < arr_length; i++) {
+        if (arr[i] < arr[pivot_posn]) {
+            int temp = arr[higher_start];
+            arr[higher_start] = arr[i];
+            arr[i] = temp;
+            higher_start++;
+        }
+    }
+    // swaping pivot at first position to before higher region
+    int temp = arr[higher_start - 1];
+    arr[higher_start - 1] = arr[pivot_posn];
+    arr[pivot_posn] = temp;
+    pivot_posn = higher_start - 1;
+
+    // now lower than pivot region
+    quicksort(arr, pivot_posn);
+    // higher than pivot region
+    quicksort(arr + pivot_posn + 1, arr_length - pivot_posn - 1);
+
+    return;
+}
+
 void merge(int *arr1, size_t arr1_len, int *arr2, size_t arr2_len) {
     // one neat thing about this is that, arr1 and arr2
     // are continous. Thus i can just create a temporary array
@@ -136,38 +167,54 @@ void bubble_sort(int *arr, size_t arr_length) {
     return;
 }
 
+unsigned int rand_range(unsigned int min, unsigned int max);
 void shuffle(int *arr, size_t arr_length);
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: ./exec 0|1{for printing the sorted arr}\n");
+    if (argc != 3) {
+        printf(
+            "Usage: ./exec 0|1{for printing the sorted arr} {total number}\n");
         return 0;
     }
 
     srand(time(NULL));
 
-    size_t arr_length = 1000000;
+    size_t arr_length = atoi(argv[2]);
     int arr[arr_length];
     for (int i = 0; i < arr_length; i++) {
-        arr[i] = i;
+        // arr[i] = i;
+        arr[i] = rand_range(0, arr_length - 1);
     }
 
     // shuffling
-    shuffle(arr, arr_length);
+    // shuffle(arr, arr_length);
 
     // sorting
     // bubble_sort(arr, arr_length);
     // selection_sort(arr, arr_length);
     // insertion_sort(arr, arr_length);
-    merge_sort(arr, arr_length);
+    // merge_sort(arr, arr_length);
+    quicksort(arr, arr_length);
 
-    // checking sorting
+    // checking sorting by printing
     int should_print = atoi(argv[1]);
     if (should_print == 1) {
         for (int i = 0; i < arr_length; i++) {
             printf("%d, ", arr[i]);
         }
         printf("\n");
+    }
+
+    // checking if sorted properly
+    int sorted = 1;
+    for (size_t i = 1; i < arr_length; i++) {
+        if (arr[i] < arr[i - 1]) {
+            sorted = 0;
+            break;
+        }
+    }
+    if (sorted == 0) {
+        printf("Not sorted properly!!!\n");
     }
 
     return 0;
